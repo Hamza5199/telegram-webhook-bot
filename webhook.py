@@ -19,8 +19,23 @@ def send_to_telegram(text):
 def webhook():
     data = request.get_json(silent=True)
 
-    if not data or "message" not in data:
+    if not data:
         return "OK", 200
+
+    message = data.get("message")
+
+    # Agar message string hai
+    if isinstance(message, str):
+        send_to_telegram(message)
+        return "OK", 200
+
+    # Agar message dict hai
+    if isinstance(message, dict):
+        text = message.get("text")
+        if text:
+            send_to_telegram(text)
+
+    return "OK", 200
 
     text = data["message"].get("text", "")
     send_to_telegram(text)
