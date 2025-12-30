@@ -17,15 +17,25 @@ def send_to_telegram(text):
     payload = {"chat_id": CHAT_ID, "text": text}
     requests.post(url, data=payload)
 
-# ===== BINANCE DATA =====
-SYMBOL = "BTCUSDT"
+# ===== COINS CONFIG =====
+PAIRS = [
+    "BTCUSDT",
+    "ETHUSDT",
+    "BNBUSDT",
+    "SOLUSDT",
+    "XRPUSDT",
+    "ADAUSDT"
+]
+
 INTERVAL = "1m"
 LIMIT = 50
 
-def get_candles():
+last_signal_time = {}
+
+def get_candles(symbol):
     url = "https://api.binance.com/api/v3/klines"
     params = {
-        "symbol": SYMBOL,
+        "symbol": symbol,
         "interval": INTERVAL,
         "limit": LIMIT
     }
@@ -50,33 +60,45 @@ def get_candles():
 # ===== SCALPING ENGINE =====
 def scalping_bot():
     while True:
-        try:
-            df = get_candles()
+        for symbol in PAIRS:
+            try:
+                now = time.time()
 
-            df["EMA_9"] = ta.trend.ema_indicator(df["close"], window=9)
-            df["EMA_21"] = ta.trend.ema_indicator(df["close"], window=21)
-            df["RSI"] = ta.momentum.rsi(df["close"], window=14)
+                # ⛔ Cooldown: 10 minutes per coin
+                if symbol in last_signal_time and now - last_signal_time[symbol] < 600:
+                    continue
 
-            last = df.iloc[-1]
+                df = get_candles(symbol)
 
-            if (
-                last["EMA_9"] > last["EMA_21"]
-                and 40 < last["RSI"] < 60
-                and last["close"] > last["EMA_21"]
-            ):
-                entry = round(last["close"], 2)
-                stop_loss = round(df["low"].iloc[-5:].min(), 2)
-                risk = entry - stop_loss
+                df["EMA_9"] = ta.trend.ema_indicator(df["close"], window=9)
+                df["EMA_21"] = ta.trend.ema_indicator(df["close"], window=21)
+                df["RSI"] = ta.momentum.rsi(df["close"], window=14)
 
-                tp1 = round(entry + risk * 1.0, 2)
-                tp2 = round(entry + risk * 1.5, 2)
-                tp3 = round(entry + risk * 2.0, 2)
+                last = df.iloc[-1]
 
-                message = f"""
-🔱 BTCUSDT SCALPING SIGNAL 🔱
+                if (
+                    last["EMA_9"] > last["EMA_21"]
+                    and 40 < last["RSI"] < 60
+                    and last["close"] > last["EMA_21"]
+                ):
+                    entry = round(last["close"], 4)
+                    stop_loss = round(df["low"].iloc[-5:].min(), 4)
+                    risk = entry - stop_loss
+
+                    tp1 = round(entry + risk * 1.0, 4)
+                    tp2 = round(entry + risk * 1.5, 4)
+                    tp3 = round(entry + risk * 2.0, 4)
+
+                    dca1 = round(entry - risk * 0.3, 4)
+                    dca2 = round(entry - risk * 0.6, 4)
+
+                    message = f"""
+🔱 {symbol} SCALPING SIGNAL 🔱
 
 🟢 LONG
 Entry: {entry}
+DCA1: {dca1}
+DCA2: {dca2}
 Stop Loss: {stop_loss}
 
 🎯 TP1: {tp1}
@@ -84,23 +106,23 @@ Stop Loss: {stop_loss}
 🎯 TP3: {tp3}
 
 ⏱ Timeframe: 1m
-⚠️ Use proper risk management
+⚠️ Risk management required
 """
 
-                send_to_telegram(message)
+                    send_to_telegram(message)
+                    last_signal_time[symbol] = now
 
-            time.sleep(60)
+            except Exception as e:
+                print(f"{symbol} error:", e)
 
-        except Exception as e:
-            print("Bot error:", e)
-            time.sleep(60)
+        time.sleep(60)
 
 # ===== START BACKGROUND THREAD =====
 threading.Thread(target=scalping_bot, daemon=True).start()
 
 @app.route("/")
 def home():
-    return "Scalping bot is running"
+    return "Multi-coin scalping bot is running"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
