@@ -1,4 +1,5 @@
 import ccxt
+import pandas as pd
 
 exchange = ccxt.binance({
     "enableRateLimit": True,
@@ -7,9 +8,18 @@ exchange = ccxt.binance({
     }
 })
 
-def get_price():
-    ticker = exchange.fetch_ticker("BTC/USDT")
-    price = ticker["last"]
-    print("BTC price:", price)
+def fetch_candles():
+    candles = exchange.fetch_ohlcv(
+        symbol="BTC/USDT",
+        timeframe="5m",
+        limit=50
+    )
 
-get_price()
+    df = pd.DataFrame(
+        candles,
+        columns=["time", "open", "high", "low", "close", "volume"]
+    )
+
+    print(df.tail())
+
+fetch_candles()
