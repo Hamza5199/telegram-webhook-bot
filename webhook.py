@@ -2,7 +2,7 @@ from flask import Flask, request
 import requests
 import os
 
-app = Flask(__name__)   # ✅ FIXED
+app = Flask(__name__)
 
 BOT_TOKEN = "8504676875:AAHX9Gwy7ognF4s-4k5Kt4fjVwBnXpXejk8"
 CHAT_ID = "-1003303267979"
@@ -14,6 +14,12 @@ def send_to_telegram(text):
         "text": text
     }
     requests.post(url, data=payload)
+
+# ✅ TEST ROUTE (YAHAN ADD KIYA HAI)
+@app.route("/", methods=["GET"])
+def home():
+    send_to_telegram("✅ Bot is LIVE & Telegram working")
+    return "Bot is running"
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
@@ -35,10 +41,6 @@ def webhook():
         if text:
             send_to_telegram(text)
 
-    return "OK", 200
-
-    text = data["message"].get("text", "")
-    send_to_telegram(text)
     return "OK", 200
 
 if __name__ == "__main__":
