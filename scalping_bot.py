@@ -1,0 +1,1 @@
+print("Scalping bot started")
