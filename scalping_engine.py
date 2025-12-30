@@ -25,7 +25,11 @@ def get_candles():
         ]
     )
 
+    df["open"] = df["open"].astype(float)
+    df["high"] = df["high"].astype(float)
+    df["low"] = df["low"].astype(float)
     df["close"] = df["close"].astype(float)
+
     return df
 
 def run_engine():
@@ -39,13 +43,27 @@ def run_engine():
 
             last = df.iloc[-1]
 
-            print(
-                f"[DATA] {SYMBOL} | "
-                f"Close: {last['close']} | "
-                f"EMA9: {round(last['EMA_9'],2)} | "
-                f"EMA21: {round(last['EMA_21'],2)} | "
-                f"RSI: {round(last['RSI'],2)}"
-            )
+            # 🔎 LONG CONDITION
+            if (
+                last["EMA_9"] > last["EMA_21"]
+                and 40 < last["RSI"] < 60
+                and last["close"] > last["EMA_21"]
+            ):
+                entry = round(last["close"], 2)
+                stop_loss = round(df["low"].iloc[-5:].min(), 2)
+
+                risk = entry - stop_loss
+
+                tp1 = round(entry + risk * 1.0, 2)
+                tp2 = round(entry + risk * 1.5, 2)
+                tp3 = round(entry + risk * 2.0, 2)
+
+                print("🟢 LONG SIGNAL FOUND")
+                print("Entry:", entry)
+                print("Stop Loss:", stop_loss)
+                print("TP1:", tp1, "TP2:", tp2, "TP3:", tp3)
+            else:
+                print("No trade condition")
 
             time.sleep(60)
 
