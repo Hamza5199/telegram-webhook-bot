@@ -18,7 +18,7 @@ def send_to_telegram(text):
 # ✅ TEST ROUTE (YAHAN ADD KIYA HAI)
 @app.route("/", methods=["GET"])
 def home():
-    send_to_telegram("✅ Bot is LIVE & Telegram working")
+    send_to_telegram("✅ Plese HOLD im finding the Signal")
     return "Bot is running"
 
 @app.route("/webhook", methods=["POST"])
