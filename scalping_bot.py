@@ -1,5 +1,6 @@
 import ccxt
 import pandas as pd
+import pandas_ta as ta
 
 exchange = ccxt.binance({
     "enableRateLimit": True,
@@ -19,6 +20,10 @@ def fetch_candles():
         candles,
         columns=["time", "open", "high", "low", "close", "volume"]
     )
+
+    # EMA indicators
+    df["EMA_9"] = ta.ema(df["close"], length=9)
+    df["EMA_21"] = ta.ema(df["close"], length=21)
 
     print(df.tail())
 
